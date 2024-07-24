@@ -1,0 +1,204 @@
+[
+    {
+        "id": "6250c5e8c4fa3d37",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "f2586f935e50b636",
+        "type": "mqtt in",
+        "z": "6250c5e8c4fa3d37",
+        "name": "",
+        "topic": "/sensors/#",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "c221181672a2444d",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 400,
+        "y": 600,
+        "wires": [
+            [
+                "dc6c18e7ea24aac8",
+                "15d500fdfcd45634"
+            ]
+        ]
+    },
+    {
+        "id": "dc6c18e7ea24aac8",
+        "type": "debug",
+        "z": "6250c5e8c4fa3d37",
+        "name": "sensor messages",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 710,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "15d500fdfcd45634",
+        "type": "function",
+        "z": "6250c5e8c4fa3d37",
+        "name": "sensor alarm",
+        "func": "let id = msg.topic.split('/').at(-1);\nlet data = msg.payload;\n\n/* evaluate data */\nvar alarm = false;\nif('temperature' in data && data['temperature'] > 50.00) alarm = true;\nif('smoke' in data && data['smoke'] > 60) alarm = true;\n\nreturn {\n    type: 'node',\n    id: id,\n    alarm: alarm\n};",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 690,
+        "y": 600,
+        "wires": [
+            [
+                "062141777b6f40d1",
+                "52204146c0a67e1d"
+            ]
+        ]
+    },
+    {
+        "id": "062141777b6f40d1",
+        "type": "debug",
+        "z": "6250c5e8c4fa3d37",
+        "name": "sensor alarms",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 980,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "52204146c0a67e1d",
+        "type": "function",
+        "z": "6250c5e8c4fa3d37",
+        "name": "alarm processing",
+        "func": "let node_alarms = global.get('node_alarms');\nif(msg.type == 'node') {\n    /* node alarm message */\n    node_alarms[msg.id] = msg.alarm;\n} else if(msg.type == 'heartbeat') {\n    /* heartbeat - check for official alarm condition */\n    let active_nodes = 0;\n    for(var id in node_alarms) {\n        if(node_alarms[id]) active_nodes++;\n    }\n    return {\n        payload: (active_nodes >= 2) ? 1 : 0\n    };\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "// Code added here will be run once\n// whenever the node is started.\nglobal.set('node_alarms', {});",
+        "finalize": "",
+        "libs": [],
+        "x": 990,
+        "y": 600,
+        "wires": [
+            [
+                "14bacb715be3efe4",
+                "f6fa34b4dfe95d59"
+            ]
+        ]
+    },
+    {
+        "id": "42d77808276056a3",
+        "type": "inject",
+        "z": "6250c5e8c4fa3d37",
+        "name": "",
+        "props": [
+            {
+                "p": "type",
+                "v": "heartbeat",
+                "vt": "str"
+            },
+            {
+                "p": "timestamp",
+                "v": "",
+                "vt": "date"
+            }
+        ],
+        "repeat": "60",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "x": 690,
+        "y": 640,
+        "wires": [
+            [
+                "52204146c0a67e1d"
+            ]
+        ]
+    },
+    {
+        "id": "14bacb715be3efe4",
+        "type": "debug",
+        "z": "6250c5e8c4fa3d37",
+        "name": "official alarm",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1250,
+        "y": 540,
+        "wires": []
+    },
+    {
+        "id": "f6fa34b4dfe95d59",
+        "type": "mqtt out",
+        "z": "6250c5e8c4fa3d37",
+        "name": "",
+        "topic": "/alarm",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "c221181672a2444d",
+        "x": 1250,
+        "y": 600,
+        "wires": []
+    },
+    {
+        "id": "c221181672a2444d",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    }
+]
